@@ -50,7 +50,6 @@ const SignUp: React.FC = () => {
           .required('No minimo 8 digitos')
           .min(8, 'No minimo 8 digitos'),
       });
-      console.log(data);
 
       await schema.validate(data, {
         abortEarly: false,
@@ -59,20 +58,14 @@ const SignUp: React.FC = () => {
       await api.post('/users', data);
 
       Alert.alert(
-        'Cadastro realizado!',
-        'Você já pode fazer seu logon no Go Barber',
+        'Cadastro realizado com sucesso!',
+        'Você já pode fazer seu logon no Go Barber.',
       );
 
-      // addToast({
-      //   title: 'Cadastro realizado!',
-      //   description: 'Você já pode fazer seu logon no Go Barber',
-      //   type: 'success',
-      // });
+      navigation.goBack();
     } catch (error) {
       if (error instanceof Yup.ValidationError) {
         const errors = getValidationErrors(error);
-
-        console.log(errors);
 
         formRef.current?.setErrors(errors);
         return;
@@ -82,13 +75,6 @@ const SignUp: React.FC = () => {
         'Erro no cadastro',
         'Ocorreu um erro ao realiza cadastro, cheque se as informações não validas.',
       );
-
-      // addToast({
-      //   type: 'error',
-      //   title: 'Erro no cadastro',
-      //   description:
-      //     'Ocorreu um erro ao realiza cadastro, cheque se as informações não validas.',
-      // });
     }
   }, []);
   return (
