@@ -1,6 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../../hooks/auth';
@@ -30,7 +31,7 @@ export interface Provider {
   name: string;
   avatar_url: string;
 }
-interface DayAvailability {
+interface AvailabilityItem {
   hour: number;
   available: boolean;
 }
@@ -41,7 +42,7 @@ const CreateAppointment: React.FC = () => {
   const routeParams = route.params as RouteParams;
   const { goBack } = useNavigation();
 
-  const [availability, setAvailability] = useState<DayAvailability[]>([]);
+  const [availability, setAvailability] = useState<AvailabilityItem[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -54,6 +55,7 @@ const CreateAppointment: React.FC = () => {
       setProviders(response.data);
     });
   }, []);
+
   useEffect(() => {
     api
       .get(`providers/${selectedProvider}/day-availability`, {
@@ -89,6 +91,30 @@ const CreateAppointment: React.FC = () => {
       setSelectedDate(date);
     }
   }, []);
+
+  const morningAvailability = useMemo(() => {
+    return availability
+      .filter(({ hour }) => hour < 12)
+      .map(({ hour, available }) => {
+        return {
+          hour,
+          available,
+          hourFormatted: format(new Date().setHours(hour), 'HH:00'),
+        };
+      });
+  }, [availability]);
+
+  const AfternoonAvailability = useMemo(() => {
+    return availability
+      .filter(({ hour }) => hour >= 12)
+      .map(({ hour, available }) => {
+        return {
+          hour,
+          available,
+          hourFormatted: format(new Date().setHours(hour), 'HH:00'),
+        };
+      });
+  }, [availability]);
 
   return (
     <Container>
@@ -137,6 +163,14 @@ const CreateAppointment: React.FC = () => {
           />
         )}
       </Calendar>
+
+      {morningAvailability.map(({ hourFormatted, available }) => (
+        <Title key={hourFormatted}>{hourFormatted}</Title>
+      ))}
+
+      {AfternoonAvailability.map(({ hourFormatted, available }) => (
+        <Title key={hourFormatted}>{hourFormatted}</Title>
+      ))}
     </Container>
   );
 };
