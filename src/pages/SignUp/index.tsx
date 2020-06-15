@@ -1,29 +1,25 @@
 /* eslint-disable no-unused-expressions */
-import React, { useRef, useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { FormHandles } from '@unform/core';
+import { Form } from '@unform/mobile';
+import React, { useCallback, useRef } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
-  View,
   TextInput,
-  Alert,
+  View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
-import { useNavigation } from '@react-navigation/native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { Form } from '@unform/mobile';
-import { FormHandles } from '@unform/core';
+import Icon from 'react-native-vector-icons/Feather';
 import * as Yup from 'yup';
-
-import getValidationErrors from '../../utils/getValidationErrors';
-
-import api from '../../services/api';
-
+import logoImg from '../../assets/logo.png';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
-
-import logoImg from '../../assets/logo.png';
-import { BackToSignInText, BackToSignIn, Container, Title } from './styles';
+import api from '../../services/api';
+import getValidationErrors from '../../utils/getValidationErrors';
+import { BackToSignIn, BackToSignInText, Container, Title } from './styles';
 
 interface SingUpFormData {
   name: string;
@@ -37,46 +33,49 @@ const SignUp: React.FC = () => {
   const emailInputRef = useRef<TextInput>(null);
   const navigation = useNavigation();
 
-  const handleSignUp = useCallback(async (data: SingUpFormData) => {
-    try {
-      formRef.current?.setErrors({});
+  const handleSignUp = useCallback(
+    async (data: SingUpFormData) => {
+      try {
+        formRef.current?.setErrors({});
 
-      const schema = Yup.object().shape({
-        name: Yup.string().required('Nome obrigatório'),
-        email: Yup.string()
-          .required('E-mail obrigatório')
-          .email('Digite um e-mail válido'),
-        password: Yup.string()
-          .required('No minimo 8 digitos')
-          .min(8, 'No minimo 8 digitos'),
-      });
+        const schema = Yup.object().shape({
+          name: Yup.string().required('Nome obrigatório'),
+          email: Yup.string()
+            .required('E-mail obrigatório')
+            .email('Digite um e-mail válido'),
+          password: Yup.string()
+            .required('No minimo 8 digitos')
+            .min(8, 'No minimo 8 digitos'),
+        });
 
-      await schema.validate(data, {
-        abortEarly: false,
-      });
+        await schema.validate(data, {
+          abortEarly: false,
+        });
 
-      await api.post('/users', data);
+        await api.post('/users', data);
 
-      Alert.alert(
-        'Cadastro realizado com sucesso!',
-        'Você já pode fazer seu logon no Go Barber.',
-      );
+        Alert.alert(
+          'Cadastro realizado com sucesso!',
+          'Você já pode fazer seu logon no Go Barber.',
+        );
 
-      navigation.goBack();
-    } catch (error) {
-      if (error instanceof Yup.ValidationError) {
-        const errors = getValidationErrors(error);
+        navigation.goBack();
+      } catch (error) {
+        if (error instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(error);
 
-        formRef.current?.setErrors(errors);
-        return;
+          formRef.current?.setErrors(errors);
+          return;
+        }
+
+        Alert.alert(
+          'Erro no cadastro',
+          'Ocorreu um erro ao realiza cadastro, cheque se as informações não validas.',
+        );
       }
-
-      Alert.alert(
-        'Erro no cadastro',
-        'Ocorreu um erro ao realiza cadastro, cheque se as informações não validas.',
-      );
-    }
-  }, []);
+    },
+    [navigation],
+  );
   return (
     <>
       <KeyboardAvoidingView
