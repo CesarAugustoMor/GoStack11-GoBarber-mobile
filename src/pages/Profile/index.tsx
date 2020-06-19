@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import ImagePicker from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/Feather';
 import * as Yup from 'yup';
 import Button from '../../components/Button';
@@ -19,20 +20,23 @@ import api from '../../services/api';
 import getValidationErrors from '../../utils/getValidationErrors';
 import {
   BackButton,
+  BackButtonUserAvatarContainer,
   Container,
   Title,
   UserAvatar,
   UserAvatarButton,
 } from './styles';
 
-interface SingUpFormData {
+interface ProfileFormData {
   name: string;
   email: string;
+  old_password: string;
   password: string;
+  password_confirmation: string;
 }
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const formRef = useRef<FormHandles>(null);
   const oldPasswordInputRef = useRef<TextInput>(null);
@@ -41,8 +45,15 @@ const Profile: React.FC = () => {
   const emailInputRef = useRef<TextInput>(null);
   const { goBack } = useNavigation();
 
-  const handleSignUp = useCallback(
-    async (data: SingUpFormData) => {
+  const handleUpdateProfile = useCallback(
+    async (data: ProfileFormData) => {
+      if (!data.email) {
+        Object.assign(data, { email: user.email });
+      }
+      if (!data.name) {
+        Object.assign(data, { name: user.name });
+      }
+
       try {
         formRef.current?.setErrors({});
 
@@ -51,34 +62,71 @@ const Profile: React.FC = () => {
           email: Yup.string()
             .required('E-mail obrigatório')
             .email('Digite um e-mail válido'),
-          password: Yup.string()
-            .required('No minimo 8 digitos')
-            .min(8, 'No minimo 8 digitos'),
+          old_password: Yup.string(),
+          password: Yup.string().when('old_password', {
+            is: val => !!val.length,
+            then: Yup.string()
+              .required('Nova senha obrigatório')
+              .min(6, 'Mínimo de 6 dígitos'),
+            otherwise: Yup.string(),
+          }),
+          confirmPassword: Yup.string()
+            .when('old_password', {
+              is: val => !!val.length,
+              then: Yup.string()
+                .required('Confirmação de senha obrigatório')
+                .min(6, 'Mínimo de 6 dígitos'),
+              otherwise: Yup.string(),
+            })
+            .oneOf(
+              [Yup.ref('password'), null],
+              'As senhas precisam ser iguais',
+            ),
         });
 
         await schema.validate(data, {
           abortEarly: false,
         });
 
-        await api.post('/users', data);
+        const {
+          name,
+          email,
+          old_password,
+          password,
+          password_confirmation,
+        } = data;
 
-        Alert.alert(
-          'Cadastro realizado com sucesso!',
-          'Você já pode fazer seu logon no Go Barber.',
-        );
+        const formData = {
+          name,
+          email,
+          ...(old_password
+            ? {
+                old_password,
+                password,
+                password_confirmation,
+              }
+            : {}),
+        };
+
+        const response = await api.put('/profile', formData);
+
+        updateUser(response.data);
+
+        Alert.alert('Perfil atualizado com sucesso');
 
         goBack();
-      } catch (error) {
-        if (error instanceof Yup.ValidationError) {
-          const errors = getValidationErrors(error);
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
 
           formRef.current?.setErrors(errors);
+
           return;
         }
 
         Alert.alert(
-          'Erro no cadastro',
-          'Ocorreu um erro ao realiza cadastro, cheque se as informações não validas.',
+          'Erro na atualização de perfil',
+          'Ocorreu um erro ao fazer a atualização do perfil, tente novamente.',
         );
       }
     },
@@ -101,17 +149,23 @@ const Profile: React.FC = () => {
           contentContainerStyle={{ flex: 1 }}
         >
           <Container>
-            <BackButton onPress={handleGoBack}>
-              <Icon name="chevron-left" size={24} color="#999591" />
-            </BackButton>
-            <UserAvatarButton onPress={() => {}}>
-              <UserAvatar source={{ uri: user.avatar_url }} />
-            </UserAvatarButton>
+            <BackButtonUserAvatarContainer>
+              <BackButton onPress={handleGoBack}>
+                <Icon name="chevron-left" size={24} color="#999591" />
+              </BackButton>
+              <UserAvatarButton onPress={handleUpdateAvatar}>
+                <UserAvatar source={{ uri: user.avatar_url }} />
+              </UserAvatarButton>
+            </BackButtonUserAvatarContainer>
             <View>
               <Title>Meu Perfil</Title>
             </View>
 
-            <Form ref={formRef} onSubmit={handleSignUp}>
+            <Form
+              ref={formRef}
+              initialData={{ name: user.name, email: user.email }}
+              onSubmit={handleUpdateProfile}
+            >
               <Input
                 autoCapitalize="words"
                 name="name"
