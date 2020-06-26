@@ -15,17 +15,26 @@ export const Title = styled.Text`
   margin: 24px 0;
 `;
 
-export const BackButton = styled(RectButton)`
+export const BackButtonUserAvatarContainer = styled.View`
   margin-top: 40px;
+  flex-direction: row;
+  position: relative;
+`;
+
+export const BackButton = styled.TouchableOpacity`
+  position: absolute;
+  left: 0;
+  top: 70px;
 `;
 
 export const UserAvatarButton = styled(RectButton)`
-  margin-top: 32px;
+  margin: 0 auto;
 `;
 
 export const UserAvatar = styled.Image`
   width: 186px;
   height: 186px;
   border-radius: 98px;
+  margin-top: 64px;
   align-self: center;
 `;

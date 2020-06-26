@@ -1,7 +1,8 @@
+import React, { useCallback, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { FormHandles } from '@unform/core';
 import { Form } from '@unform/mobile';
-import React, { useCallback, useRef } from 'react';
+import { ScrollView } from 'react-native-gesture-handler';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -9,15 +10,18 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
 import ImagePicker from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/Feather';
 import * as Yup from 'yup';
+
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+
 import { useAuth } from '../../hooks/auth';
 import api from '../../services/api';
+
 import getValidationErrors from '../../utils/getValidationErrors';
+
 import {
   BackButton,
   BackButtonUserAvatarContainer,
@@ -64,15 +68,25 @@ const Profile: React.FC = () => {
             .email('Digite um e-mail válido'),
           old_password: Yup.string(),
           password: Yup.string().when('old_password', {
-            is: val => !!val.length,
+            is: val => {
+              if (val) {
+                return !!val.length;
+              }
+              return false;
+            },
             then: Yup.string()
               .required('Nova senha obrigatório')
               .min(6, 'Mínimo de 6 dígitos'),
             otherwise: Yup.string(),
           }),
-          confirmPassword: Yup.string()
+          password_confirmation: Yup.string()
             .when('old_password', {
-              is: val => !!val.length,
+              is: val => {
+                if (val) {
+                  return !!val.length;
+                }
+                return false;
+              },
               then: Yup.string()
                 .required('Confirmação de senha obrigatório')
                 .min(6, 'Mínimo de 6 dígitos'),
@@ -108,7 +122,7 @@ const Profile: React.FC = () => {
             : {}),
         };
 
-        const response = await api.put('/profile', formData);
+        const response = await api.put('profile', formData);
 
         updateUser(response.data);
 
@@ -126,12 +140,48 @@ const Profile: React.FC = () => {
 
         Alert.alert(
           'Erro na atualização de perfil',
-          'Ocorreu um erro ao fazer a atualização do perfil, tente novamente.',
+          'Ocorreu um erro ao realizar a atualização do perfil, tente novamente.',
         );
       }
     },
-    [goBack],
+    [goBack, updateUser, user],
   );
+
+  const handleUpdateAvatar = useCallback(() => {
+    ImagePicker.showImagePicker(
+      {
+        title: 'Selecionar um avatar',
+        cancelButtonTitle: 'Cancelar',
+        takePhotoButtonTitle: 'Usar câmera',
+        chooseFromLibraryButtonTitle: 'Escoler da galeria',
+      },
+      async response => {
+        if (response.didCancel) {
+          return;
+        }
+
+        if (response.error) {
+          Alert.alert('Erro ao atualizar seu perfil');
+          return;
+        }
+
+        const data = new FormData();
+
+        data.append('avatar', {
+          type: 'image/jpeg',
+          name: `${user.id}.jpg`,
+          uri: response.uri,
+        });
+
+        const responseApi = await api.patch('users/avatar', data);
+
+        updateUser(responseApi.data);
+
+        // You can also display the image using data:
+        // const source = { uri: 'data:image/jpeg;base64,' + response.data };
+      },
+    );
+  }, [updateUser, user.id]);
 
   const handleGoBack = useCallback(() => {
     goBack();
@@ -163,7 +213,7 @@ const Profile: React.FC = () => {
 
             <Form
               ref={formRef}
-              initialData={{ name: user.name, email: user.email }}
+              initialData={user}
               onSubmit={handleUpdateProfile}
             >
               <Input
