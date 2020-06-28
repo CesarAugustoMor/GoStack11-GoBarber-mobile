@@ -28,10 +28,10 @@ const Input: React.RefForwardingComponent<InputRef, InputProps> = (
   { name, icon, containerStyle = {}, ...rest },
   ref,
 ) => {
+  const { registerField, defaultValue = '', fieldName, error } = useField(name);
+
   const inputElementRef = useRef<any>(null);
   const inputValueRef = useRef<InputValueReference>({ value: defaultValue });
-
-  const { registerField, defaultValue = '', fieldName, error } = useField(name);
 
   const [isFocused, setIsFocused] = useState(false);
   const [isFilled, setIsFilled] = useState(false);
@@ -56,8 +56,7 @@ const Input: React.RefForwardingComponent<InputRef, InputProps> = (
       name: fieldName,
       ref: inputValueRef.current,
       path: 'value',
-      // eslint-disable-next-line no-shadow
-      setValue(ref: any, value) {
+      setValue(refe: any, value) {
         inputValueRef.current.value = value;
         inputElementRef.current.setNativeProps({ text: value });
       },
@@ -69,8 +68,14 @@ const Input: React.RefForwardingComponent<InputRef, InputProps> = (
   }, [fieldName, registerField]);
 
   return (
-    <Container style={containerStyle} isFocused={isFocused} isErrored={!!error}>
+    <Container
+      testID="input-container"
+      style={containerStyle}
+      isFocused={isFocused}
+      isErrored={!!error}
+    >
       <Icon
+        testID="input-icon"
         name={icon}
         size={20}
         color={isFocused || isFilled ? '#ff9000' : '#666360'}

@@ -136,14 +136,14 @@ const SignUp: React.FC = () => {
                   formRef.current?.submitForm();
                 }}
               >
-                Entrar
+                Cadastrar
               </Button>
             </Form>
           </Container>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <BackToSignIn onPress={() => navigation.goBack()}>
+      <BackToSignIn testID="navigate-logon" onPress={() => navigation.goBack()}>
         <Icon name="arrow-left" size={20} color="#f4ede8" />
         <BackToSignInText>Voltar para logon </BackToSignInText>
       </BackToSignIn>

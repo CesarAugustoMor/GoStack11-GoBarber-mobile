@@ -41,9 +41,7 @@ const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
   const passwordInputRef = useRef<TextInput>(null);
   const navigation = useNavigation();
-  const { signIn, user } = useAuth();
-
-  console.log(user);
+  const { signIn } = useAuth();
 
   const handleSignIn = useCallback(
     async (data: SignInFormData) => {
@@ -140,7 +138,10 @@ const SignIn: React.FC = () => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <CreateAccountButton onPress={() => navigation.navigate('SignUp')}>
+      <CreateAccountButton
+        testID="navigate-SignUp"
+        onPress={() => navigation.navigate('SignUp')}
+      >
         <Icon name="log-in" size={20} color="#ff9000" />
         <CreateAccountButtonText>Criar uma Conta</CreateAccountButtonText>
       </CreateAccountButton>
